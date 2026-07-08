@@ -19,11 +19,19 @@ namespace CineBook.Services.Implementations
             var movie = new Movie
             {
                 Title = dto.Title,
+<<<<<<< HEAD
                 Description = dto.Description ?? string.Empty,
                 DurationMinutes = dto.DurationMinutes,
                 Genre = dto.Genre,
                 Language = dto.Language,
                 PosterUrl = dto.PosterUrl ?? string.Empty,
+=======
+                Description = dto.Description,
+                DurationMinutes = dto.DurationMinutes,
+                Genre = dto.Genre,
+                Language = dto.Language,
+                PosterUrl = dto.PosterUrl,
+>>>>>>> 8352284f62ad0f89281f6e0c9b349a6f36b7f0a5
                 ReleaseDate = dto.ReleaseDate,
                 Status = dto.Status
             };

@@ -39,7 +39,10 @@ app.MapControllerRoute(
 using (var scope = app.Services.CreateScope())
 {
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+<<<<<<< HEAD
     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+=======
+>>>>>>> 8352284f62ad0f89281f6e0c9b349a6f36b7f0a5
 
     string[] roleNames = { "Admin", "Customer" };
 
@@ -51,8 +54,14 @@ using (var scope = app.Services.CreateScope())
             await roleManager.CreateAsync(new IdentityRole(roleName));
         }
     }
+<<<<<<< HEAD
 
     DbInitializer.Seed(context);
 }
 
  app.Run();
+=======
+}
+
+app.Run();
+>>>>>>> 8352284f62ad0f89281f6e0c9b349a6f36b7f0a5

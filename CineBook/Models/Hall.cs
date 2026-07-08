@@ -8,7 +8,11 @@ namespace CineBook.Models
 
         [Required]
         [MaxLength(50)]
+<<<<<<< HEAD
         public string Name { get; set; } = string.Empty;
+=======
+        public string Name { get; set; }
+>>>>>>> 8352284f62ad0f89281f6e0c9b349a6f36b7f0a5
 
         public int RowsCount { get; set; }
 
@@ -17,4 +21,8 @@ namespace CineBook.Models
         public List<Seat> Seats { get; set; } = new List<Seat>();
         public List<Showtime> Showtimes { get; set; } = new List<Showtime>();
     }
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 8352284f62ad0f89281f6e0c9b349a6f36b7f0a5
