@@ -1,6 +1,7 @@
 using CineBook.Data;
 using CineBook.Dtos.Movies;
 using CineBook.Models;
+using CineBook.Services.Interfaces;
 using CineBook.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -13,48 +14,23 @@ namespace CineBook.Controllers
     public class AdminMoviesController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly IMovieService _movieService;
 
-        public AdminMoviesController(ApplicationDbContext context)
+        public AdminMoviesController(ApplicationDbContext context, IMovieService movieService)
         {
             _context = context;
+            _movieService = movieService;
         }
 
         [HttpGet("")]
-        public IActionResult Index(SearchMoviesDto search)
+        public async Task<IActionResult> Index(SearchMoviesDto search)
         {
-            var query = _context.Movies
-                .Include(m => m.Showtimes)
-                .AsQueryable();
-
-            if (!string.IsNullOrWhiteSpace(search.Title))
-            {
-                query = query.Where(m => m.Title.Contains(search.Title));
-            }
-
-            if (search.Genre.HasValue)
-            {
-                query = query.Where(m => m.Genre == search.Genre.Value);
-            }
-
-            var movies = query
-                .OrderBy(m => m.Title)
-                .Select(m => new MovieListDto
-                {
-                    Id = m.Id,
-                    Title = m.Title,
-                    Genre = m.Genre.ToString(),
-                    DurationMinutes = m.DurationMinutes,
-                    Language = m.Language,
-                    ReleaseDate = m.ReleaseDate,
-                    Status = m.Status.ToString(),
-                    ShowtimesCount = m.Showtimes.Count
-                })
-                .ToList();
+            var moviesDto = await _movieService.GetMoviesAsync(search);
 
             var viewModel = new AdminMovieIndexViewModel
             {
                 Search = search,
-                Movies = movies
+                Movies = moviesDto.Movies
             };
 
             return View("~/Views/Admin/Movies/Index.cshtml", viewModel);

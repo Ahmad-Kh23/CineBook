@@ -1,10 +1,12 @@
 using CineBook.Data;
 using CineBook.Models;
+using CineBook.Services.Implementations;
+using CineBook.Services.Interfaces;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
-
+builder.Services.AddScoped<IMovieService, MovieService>();
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -39,6 +41,7 @@ app.MapControllerRoute(
 using (var scope = app.Services.CreateScope())
 {
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
     string[] roleNames = { "Admin", "Customer" };
@@ -50,6 +53,33 @@ using (var scope = app.Services.CreateScope())
         {
             await roleManager.CreateAsync(new IdentityRole(roleName));
         }
+    }
+
+    const string adminEmail = "admin@cinebook.local";
+    const string adminPassword = "Admin@12345";
+
+    var adminUser = await userManager.FindByEmailAsync(adminEmail);
+    if (adminUser == null)
+    {
+        adminUser = new ApplicationUser
+        {
+            FullName = "Dummy Admin",
+            Email = adminEmail,
+            UserName = adminEmail,
+            EmailConfirmed = true
+        };
+
+        var createAdminResult = await userManager.CreateAsync(adminUser, adminPassword);
+        if (!createAdminResult.Succeeded)
+        {
+            var errors = string.Join(", ", createAdminResult.Errors.Select(error => error.Description));
+            throw new InvalidOperationException($"Failed to create dummy admin user: {errors}");
+        }
+    }
+
+    if (!await userManager.IsInRoleAsync(adminUser, "Admin"))
+    {
+        await userManager.AddToRoleAsync(adminUser, "Admin");
     }
 
     DbInitializer.Seed(context);
