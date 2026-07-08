@@ -7,6 +7,7 @@ namespace CineBook.Services.Interfaces
 
 
         Task CreateMovieAsync(CreateMovieDto dto);
+        Task<MoviesDto> GetAllMoviesAsync();
 
 
 
