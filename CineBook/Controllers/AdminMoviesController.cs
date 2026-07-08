@@ -1,11 +1,9 @@
-using CineBook.Data;
 using CineBook.Dtos.Movies;
-using CineBook.Models;
+using CineBook.Dtos.Showtimes;
 using CineBook.Services.Interfaces;
 using CineBook.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace CineBook.Controllers
 {
@@ -13,13 +11,13 @@ namespace CineBook.Controllers
     [Route("Admin/Movies")]
     public class AdminMoviesController : Controller
     {
-        private readonly ApplicationDbContext _context;
         private readonly IMovieService _movieService;
+        private readonly IShowtimeService _showtimeService;
 
-        public AdminMoviesController(ApplicationDbContext context, IMovieService movieService)
+        public AdminMoviesController(IMovieService movieService, IShowtimeService showtimeService)
         {
-            _context = context;
             _movieService = movieService;
+            _showtimeService = showtimeService;
         }
 
         [HttpGet("")]
@@ -44,83 +42,52 @@ namespace CineBook.Controllers
 
         [HttpPost("Create")]
         [ValidateAntiForgeryToken]
-        public IActionResult Create(CreateMovieDto dto)
+        public async Task<IActionResult> Create(CreateMovieDto dto)
         {
             if (!ModelState.IsValid)
             {
                 return View("~/Views/Admin/Movies/Create.cshtml", dto);
             }
 
-            var movie = new Movie
-            {
-                Title = dto.Title,
-                Description = dto.Description ?? string.Empty,
-                DurationMinutes = dto.DurationMinutes,
-                Genre = dto.Genre,
-                Language = dto.Language,
-                PosterUrl = dto.PosterUrl ?? string.Empty,
-                ReleaseDate = dto.ReleaseDate,
-                Status = dto.Status
-            };
-
-            _context.Movies.Add(movie);
-            _context.SaveChanges();
+            await _movieService.CreateMovieAsync(dto);
 
             TempData["AdminMovieMessage"] = "Movie added successfully.";
             return RedirectToAction(nameof(Index));
         }
 
         [HttpGet("Edit/{id}")]
-        public IActionResult Edit(int id)
+        public async Task<IActionResult> Edit(int id)
         {
-            var movie = _context.Movies.Find(id);
+            var dto = await _movieService.GetMovieForEditAsync(new GetMovieForEditDto
+            {
+                Id = id
+            });
 
-            if (movie == null)
+            if (dto == null)
             {
                 return NotFound();
             }
-
-            var dto = new CreateMovieDto
-            {
-                Title = movie.Title,
-                Description = movie.Description,
-                DurationMinutes = movie.DurationMinutes,
-                Genre = movie.Genre,
-                Language = movie.Language,
-                PosterUrl = movie.PosterUrl,
-                ReleaseDate = movie.ReleaseDate,
-                Status = movie.Status
-            };
 
             return View("~/Views/Admin/Movies/Edit.cshtml", dto);
         }
 
         [HttpPost("Edit/{id}")]
         [ValidateAntiForgeryToken]
-        public IActionResult Edit(int id, CreateMovieDto dto)
+        public async Task<IActionResult> Edit(int id, UpdateMovieDto dto)
         {
+            dto.Id = id;
+
             if (!ModelState.IsValid)
             {
                 return View("~/Views/Admin/Movies/Edit.cshtml", dto);
             }
 
-            var movie = _context.Movies.Find(id);
+            var result = await _movieService.UpdateMovieAsync(dto);
 
-            if (movie == null)
+            if (result.Result == UpdateMovieResult.NotFound)
             {
                 return NotFound();
             }
-
-            movie.Title = dto.Title;
-            movie.Description = dto.Description ?? string.Empty;
-            movie.DurationMinutes = dto.DurationMinutes;
-            movie.Genre = dto.Genre;
-            movie.Language = dto.Language;
-            movie.PosterUrl = dto.PosterUrl ?? string.Empty;
-            movie.ReleaseDate = dto.ReleaseDate;
-            movie.Status = dto.Status;
-
-            _context.SaveChanges();
 
             TempData["AdminMovieMessage"] = "Movie updated successfully.";
             return RedirectToAction(nameof(Index));
@@ -128,28 +95,95 @@ namespace CineBook.Controllers
 
         [HttpPost("Delete/{id}")]
         [ValidateAntiForgeryToken]
-        public IActionResult Delete(int id)
+        public async Task<IActionResult> Delete(DeleteMovieDto dto)
         {
-            var movie = _context.Movies
-                .Include(m => m.Showtimes)
-                .FirstOrDefault(m => m.Id == id);
+            var result = await _movieService.DeleteMovieAsync(dto);
 
-            if (movie == null)
+            if (result.Result == DeleteMovieResult.NotFound)
             {
                 return NotFound();
             }
 
-            if (movie.Showtimes.Any())
+            if (result.Result == DeleteMovieResult.HasShowtimes)
             {
                 TempData["AdminMovieError"] = "This movie has showtimes and cannot be deleted.";
                 return RedirectToAction(nameof(Index));
             }
 
-            _context.Movies.Remove(movie);
-            _context.SaveChanges();
-
             TempData["AdminMovieMessage"] = "Movie deleted successfully.";
             return RedirectToAction(nameof(Index));
+        }
+
+        [HttpGet("{movieId}/Showtimes/Create")]
+        public async Task<IActionResult> CreateShowtime(int movieId)
+        {
+            var form = await _showtimeService.GetCreateShowtimeFormAsync(new CreateShowtimeFormRequestDto
+            {
+                MovieId = movieId
+            });
+
+            if (form == null)
+            {
+                return NotFound();
+            }
+
+            return View("~/Views/Admin/Movies/CreateShowtime.cshtml", form);
+        }
+
+        [HttpPost("{movieId}/Showtimes/Create")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateShowtime(int movieId, CreateShowtimeDto dto)
+        {
+            dto.MovieId = movieId;
+
+            if (!ModelState.IsValid)
+            {
+                return await CreateShowtimeFormView(movieId, dto);
+            }
+
+            var result = await _showtimeService.CreateShowtimeAsync(dto);
+
+            if (result.Result == CreateShowtimeResult.MovieNotFound)
+            {
+                return NotFound();
+            }
+
+            if (result.Result == CreateShowtimeResult.HallNotFound)
+            {
+                ModelState.AddModelError(nameof(CreateShowtimeDto.HallId), "Select a valid hall.");
+                return await CreateShowtimeFormView(movieId, dto);
+            }
+
+            if (result.Result == CreateShowtimeResult.StartTimeNotUpcoming)
+            {
+                ModelState.AddModelError(nameof(CreateShowtimeDto.StartTime), "Showtime must be in the future.");
+                return await CreateShowtimeFormView(movieId, dto);
+            }
+
+            if (result.Result == CreateShowtimeResult.HallUnavailable)
+            {
+                ModelState.AddModelError(nameof(CreateShowtimeDto.StartTime), "This hall already has a showtime during that time.");
+                return await CreateShowtimeFormView(movieId, dto);
+            }
+
+            TempData["AdminMovieMessage"] = "Showtime added successfully.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        private async Task<IActionResult> CreateShowtimeFormView(int movieId, CreateShowtimeDto dto)
+        {
+            var form = await _showtimeService.GetCreateShowtimeFormAsync(new CreateShowtimeFormRequestDto
+            {
+                MovieId = movieId,
+                Showtime = dto
+            });
+
+            if (form == null)
+            {
+                return NotFound();
+            }
+
+            return View("~/Views/Admin/Movies/CreateShowtime.cshtml", form);
         }
     }
 }

@@ -14,7 +14,8 @@ namespace CineBook.Services.Implementations
         {
             _context = context;
         }
-        ////////////////////////////////////////////////////////////////////////////////////
+        ////////////////////////////////////////////////////////////////////////////////////////////// CREATE
+
         public async Task CreateMovieAsync(CreateMovieDto dto)
         {
             var movie = new Movie
@@ -33,7 +34,8 @@ namespace CineBook.Services.Implementations
             await _context.SaveChangesAsync();
         }
 
-        ////////////////////////////////////////////////////////////////////////////////////
+        ////////////////////////////////////////////////////////////////////////////////////////////// SEARCH
+
 
         public async Task<MoviesDto> GetMoviesAsync(SearchMoviesDto search)
         {
@@ -41,8 +43,7 @@ namespace CineBook.Services.Implementations
                 .AsNoTracking()
                 .AsQueryable();
 
-            if (!string.IsNullOrWhiteSpace(search.Title) && search.Title.Trim().Length >= 2) // Word start search by 2 letters aka A wont work
-                                                                                             // but A Q will work getting A Quiet place for ex
+            if (!string.IsNullOrWhiteSpace(search.Title) && search.Title.Trim().Length >= 2)
             {
                 var title = search.Title.Trim();
 
@@ -75,6 +76,90 @@ namespace CineBook.Services.Implementations
             return new MoviesDto
             {
                 Movies = movies
+            };
+        }
+
+        ////////////////////////////////////////////////////////////////////////////////////////////// EDIT
+
+        public async Task<UpdateMovieDto?> GetMovieForEditAsync(GetMovieForEditDto dto)
+        {
+            return await _context.Movies
+                .AsNoTracking()
+                .Where(m => m.Id == dto.Id)
+                .Select(m => new UpdateMovieDto
+                {
+                    Id = m.Id,
+                    Title = m.Title,
+                    Description = m.Description,
+                    DurationMinutes = m.DurationMinutes,
+                    Genre = m.Genre,
+                    Language = m.Language,
+                    PosterUrl = m.PosterUrl,
+                    ReleaseDate = m.ReleaseDate,
+                    Status = m.Status
+                })
+                .FirstOrDefaultAsync();
+        }
+
+        ////////////////////////////////////////////////////////////////////////////////////////////// UPDATE
+
+        public async Task<UpdateMovieResultDto> UpdateMovieAsync(UpdateMovieDto dto)
+        {
+            var movie = await _context.Movies.FindAsync(dto.Id);
+
+            if (movie == null)
+            {
+                return new UpdateMovieResultDto
+                {
+                    Result = UpdateMovieResult.NotFound
+                };
+            }
+
+            movie.Title = dto.Title;
+            movie.Description = dto.Description ?? string.Empty;
+            movie.DurationMinutes = dto.DurationMinutes;
+            movie.Genre = dto.Genre;
+            movie.Language = dto.Language;
+            movie.PosterUrl = dto.PosterUrl ?? string.Empty;
+            movie.ReleaseDate = dto.ReleaseDate;
+            movie.Status = dto.Status;
+
+            await _context.SaveChangesAsync();
+            return new UpdateMovieResultDto
+            {
+                Result = UpdateMovieResult.Updated
+            };
+        }
+
+        ////////////////////////////////////////////////////////////////////////////////////////////// DELETE
+        public async Task<DeleteMovieResultDto> DeleteMovieAsync(DeleteMovieDto dto)
+        {
+            var movie = await _context.Movies.FindAsync(dto.Id);
+
+            if (movie == null)
+            {
+                return new DeleteMovieResultDto
+                {
+                    Result = DeleteMovieResult.NotFound
+                };
+            }
+
+            var hasShowtimes = await _context.Showtimes.AnyAsync(s => s.MovieId == dto.Id);
+
+            if (hasShowtimes)
+            {
+                return new DeleteMovieResultDto
+                {
+                    Result = DeleteMovieResult.HasShowtimes
+                };
+            }
+
+            _context.Movies.Remove(movie);
+            await _context.SaveChangesAsync();
+
+            return new DeleteMovieResultDto
+            {
+                Result = DeleteMovieResult.Deleted
             };
         }
     }

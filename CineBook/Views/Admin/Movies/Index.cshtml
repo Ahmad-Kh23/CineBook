@@ -71,6 +71,7 @@
                         <td>@movie.Status</td>
                         <td>@movie.ShowtimesCount</td>
                         <td class="text-end">
+                            <a href="/Admin/Movies/@movie.Id/Showtimes/Create" class="btn btn-sm btn-outline-secondary">Add Showtime</a>
                             <a href="/Admin/Movies/Edit/@movie.Id" class="btn btn-sm btn-outline-dark">Edit</a>
                             <form method="post" action="/Admin/Movies/Delete/@movie.Id" class="d-inline">
                                 @Html.AntiForgeryToken()

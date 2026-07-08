@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddScoped<IMovieService, MovieService>();
+builder.Services.AddScoped<IShowtimeService, ShowtimeService>();
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
