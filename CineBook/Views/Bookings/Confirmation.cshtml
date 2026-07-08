@@ -1,0 +1,59 @@
+@model Booking
+
+@{
+    ViewData["Title"] = "Booking Confirmed";
+    var seats = Model.BookingSeats
+        .Select(bs => bs.Seat)
+        .OrderBy(s => s.RowLabel)
+        .ThenBy(s => s.SeatNumber)
+        .ToList();
+}
+
+<div class="alert alert-success" role="alert">
+    Your booking has been confirmed.
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="border rounded p-4">
+            <div class="d-flex justify-content-between align-items-start mb-3">
+                <div>
+                    <h1 class="h3 mb-1">@Model.Showtime.Movie.Title</h1>
+                    <p class="text-muted mb-0">Booking #@Model.Id</p>
+                </div>
+                <span class="badge text-bg-success">@Model.Status</span>
+            </div>
+
+            <dl class="row mb-4">
+                <dt class="col-sm-4">Hall</dt>
+                <dd class="col-sm-8">@Model.Showtime.Hall.Name</dd>
+
+                <dt class="col-sm-4">Date</dt>
+                <dd class="col-sm-8">@Model.Showtime.StartTime.ToString("dd MMM yyyy")</dd>
+
+                <dt class="col-sm-4">Time</dt>
+                <dd class="col-sm-8">@Model.Showtime.StartTime.ToString("hh:mm tt")</dd>
+
+                <dt class="col-sm-4">Booked On</dt>
+                <dd class="col-sm-8">@Model.BookingDate.ToString("dd MMM yyyy hh:mm tt")</dd>
+            </dl>
+
+            <h2 class="h5">Seats</h2>
+            <div class="mb-4">
+                @foreach (var seat in seats)
+                {
+                    <span class="badge text-bg-dark me-1 mb-1">@seat.RowLabel@seat.SeatNumber (@seat.SeatType)</span>
+                }
+            </div>
+
+            <div class="d-flex justify-content-between border-top pt-3">
+                <strong>Total Price</strong>
+                <strong>@Model.TotalPrice.ToString("0.00") EGP</strong>
+            </div>
+        </div>
+
+        <div class="mt-3">
+            <a asp-controller="Movies" asp-action="Index" class="btn btn-outline-dark">Back to Movies</a>
+        </div>
+    </div>
+</div>

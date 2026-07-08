@@ -1,0 +1,75 @@
+@model List<Booking>
+
+@{
+    ViewData["Title"] = "My Bookings";
+}
+
+<div class="mb-4">
+    <h1 class="h3">My Bookings</h1>
+    <p class="text-muted mb-0">Your cinema booking history.</p>
+</div>
+
+@if (Model.Any())
+{
+    <div class="table-responsive">
+        <table class="table table-bordered align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th>Movie</th>
+                    <th>Hall</th>
+                    <th>Showtime</th>
+                    <th>Seats</th>
+                    <th>Total</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var booking in Model)
+                {
+                    var seats = booking.BookingSeats
+                        .Select(bs => bs.Seat)
+                        .OrderBy(s => s.RowLabel)
+                        .ThenBy(s => s.SeatNumber)
+                        .ToList();
+
+                    <tr>
+                        <td>
+                            <div class="fw-semibold">@booking.Showtime.Movie.Title</div>
+                            <div class="text-muted small">Booked @booking.BookingDate.ToString("dd MMM yyyy")</div>
+                        </td>
+                        <td>@booking.Showtime.Hall.Name</td>
+                        <td>
+                            @booking.Showtime.StartTime.ToString("dd MMM yyyy")
+                            <div class="text-muted small">@booking.Showtime.StartTime.ToString("hh:mm tt")</div>
+                        </td>
+                        <td>
+                            @foreach (var seat in seats)
+                            {
+                                <span class="badge text-bg-dark me-1 mb-1">@seat.RowLabel@seat.SeatNumber</span>
+                            }
+                        </td>
+                        <td>@booking.TotalPrice.ToString("0.00") EGP</td>
+                        <td>
+                            @if (booking.Status == BookingStatus.Confirmed)
+                            {
+                                <span class="badge text-bg-success">@booking.Status</span>
+                            }
+                            else
+                            {
+                                <span class="badge text-bg-secondary">@booking.Status</span>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+else
+{
+    <div class="border rounded p-4 text-center">
+        <h2 class="h5">No bookings yet</h2>
+        <p class="text-muted">When you book movie tickets, they will appear here.</p>
+        <a asp-controller="Movies" asp-action="Index" class="btn btn-dark">Browse Movies</a>
+    </div>
+}
