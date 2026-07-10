@@ -1,52 +1,34 @@
-using CineBook.Data;
-using CineBook.Models;
-using CineBook.ViewModels;
+using CineBook.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace CineBook.Controllers
 {
     public class MoviesController : Controller
     {
-        private readonly ApplicationDbContext _context;
+        private readonly IMovieService _movieService;
 
-        public MoviesController(ApplicationDbContext context)
+        public MoviesController(IMovieService movieService)
         {
-            _context = context;
+            _movieService = movieService;
         }
 
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
-            var movies = _context.Movies
-                .OrderBy(m => m.Title)
-                .ToList();
+            var dto = await _movieService.GetMovieIndexAsync();
 
-            var viewModel = new MovieIndexViewModel
-            {
-                NowShowingMovies = movies
-                    .Where(m => m.Status == MovieStatus.NowShowing)
-                    .ToList(),
-                ComingSoonMovies = movies
-                    .Where(m => m.Status == MovieStatus.ComingSoon)
-                    .ToList()
-            };
-
-            return View(viewModel);
+            return View(dto);
         }
 
-        public IActionResult Details(int id)
+        public async Task<IActionResult> Details(int id)
         {
-            var movie = _context.Movies
-                .Include(m => m.Showtimes.OrderBy(s => s.StartTime))
-                    .ThenInclude(s => s.Hall)
-                .FirstOrDefault(m => m.Id == id);
+            var dto = await _movieService.GetMovieDetailsAsync(id);
 
-            if (movie == null)
+            if (dto == null)
             {
                 return NotFound();
             }
 
-            return View(movie);
+            return View(dto);
         }
     }
 }

@@ -9,5 +9,10 @@ namespace CineBook.Services.Interfaces
         Task<UpdateMovieDto?> GetMovieForEditAsync(GetMovieForEditDto dto);
         Task<MoviesDto> GetMoviesAsync(SearchMoviesDto search);
         Task<UpdateMovieResultDto> UpdateMovieAsync(UpdateMovieDto dto);
+
+
+        Task<MovieIndexDto> GetMovieIndexAsync();
+
+        Task<MovieDetailsDto?> GetMovieDetailsAsync(int movieId);
     }
 }

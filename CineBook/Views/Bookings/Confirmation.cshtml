@@ -1,12 +1,6 @@
-@model Booking
-
+@model CineBook.Dtos.Bookings.BookingConfirmationDto
 @{
     ViewData["Title"] = "Booking Confirmed";
-    var seats = Model.BookingSeats
-        .Select(bs => bs.Seat)
-        .OrderBy(s => s.RowLabel)
-        .ThenBy(s => s.SeatNumber)
-        .ToList();
 }
 
 <div class="alert alert-success" role="alert">
@@ -18,7 +12,7 @@
         <div class="border rounded p-4">
             <div class="d-flex justify-content-between align-items-start mb-3">
                 <div>
-                    <h1 class="h3 mb-1">@Model.Showtime.Movie.Title</h1>
+                    <h1 class="h3 mb-1">@Model.MovieTitle</h1>
                     <p class="text-muted mb-0">Booking #@Model.Id</p>
                 </div>
                 <span class="badge text-bg-success">@Model.Status</span>
@@ -26,13 +20,13 @@
 
             <dl class="row mb-4">
                 <dt class="col-sm-4">Hall</dt>
-                <dd class="col-sm-8">@Model.Showtime.Hall.Name</dd>
+                <dd class="col-sm-8">@Model.HallName</dd>
 
                 <dt class="col-sm-4">Date</dt>
-                <dd class="col-sm-8">@Model.Showtime.StartTime.ToString("dd MMM yyyy")</dd>
+                <dd class="col-sm-8">@Model.StartTime.ToString("dd MMM yyyy")</dd>
 
                 <dt class="col-sm-4">Time</dt>
-                <dd class="col-sm-8">@Model.Showtime.StartTime.ToString("hh:mm tt")</dd>
+                <dd class="col-sm-8">@Model.StartTime.ToString("hh:mm tt")</dd>
 
                 <dt class="col-sm-4">Booked On</dt>
                 <dd class="col-sm-8">@Model.BookingDate.ToString("dd MMM yyyy hh:mm tt")</dd>
@@ -40,7 +34,7 @@
 
             <h2 class="h5">Seats</h2>
             <div class="mb-4">
-                @foreach (var seat in seats)
+                @foreach (var seat in Model.Seats)
                 {
                     <span class="badge text-bg-dark me-1 mb-1">@seat.RowLabel@seat.SeatNumber (@seat.SeatType)</span>
                 }

@@ -17,6 +17,8 @@ namespace CineBook.Data
         public DbSet<Showtime> Showtimes { get; set; }
         public DbSet<Booking> Bookings { get; set; }
         public DbSet<BookingSeat> BookingSeats { get; set; }
+        public DbSet<Employee> Employees { get; set; }
+        public DbSet<Snack> Snacks { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -33,6 +35,36 @@ namespace CineBook.Data
             modelBuilder.Entity<Booking>()
                 .Property(b => b.TotalPrice)
                 .HasPrecision(10, 2);
+
+            modelBuilder.Entity<Employee>()
+                .Property(e => e.Salary)
+                .HasPrecision(10, 2);
+
+            modelBuilder.Entity<Employee>()
+                .HasIndex(e => e.ApplicationUserId)
+                .IsUnique();
+
+            modelBuilder.Entity<Employee>()
+                .HasIndex(e => e.NationalId)
+                .IsUnique();
+
+            modelBuilder.Entity<Employee>()
+                .HasIndex(e => e.Email)
+                .IsUnique();
+
+            modelBuilder.Entity<Employee>()
+                .HasOne(e => e.ApplicationUser)
+                .WithOne()
+                .HasForeignKey<Employee>(e => e.ApplicationUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Snack>()
+                .Property(s => s.Price)
+                .HasPrecision(10, 2);
+
+            modelBuilder.Entity<Snack>()
+                .HasIndex(s => s.Name)
+                .IsUnique();
 
             modelBuilder.Entity<BookingSeat>()
                 .HasOne(bs => bs.Seat)

@@ -1,144 +1,120 @@
 using System.Security.Claims;
-using CineBook.Data;
-using CineBook.Models;
+using CineBook.Dtos.Bookings;
+using CineBook.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace CineBook.Controllers
 {
     [Authorize]
     public class BookingsController : Controller
     {
-        private readonly ApplicationDbContext _context;
+        private readonly IBookingService _bookingService;
 
-        public BookingsController(ApplicationDbContext context)
+        public BookingsController(IBookingService bookingService)
         {
-            _context = context;
+            _bookingService = bookingService;
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Create(int showtimeId, List<int> seatIds)
+        public async Task<IActionResult> Create(
+            int showtimeId,
+            List<int> seatIds)
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var userId = User.FindFirstValue(
+                ClaimTypes.NameIdentifier);
 
             if (userId == null)
             {
                 return Challenge();
             }
 
-            if (seatIds == null || !seatIds.Any())
-            {
-                TempData["SeatError"] = "Please select at least one seat.";
-                return RedirectToAction("Select", "Showtimes", new { id = showtimeId });
-            }
-
-            seatIds = seatIds.Distinct().ToList();
-
-            var showtime = _context.Showtimes
-                .Include(s => s.Movie)
-                .Include(s => s.Hall)
-                .FirstOrDefault(s => s.Id == showtimeId);
-
-            if (showtime == null)
-            {
-                return NotFound();
-            }
-
-            var seats = _context.Seats
-                .Where(s => seatIds.Contains(s.Id) && s.HallId == showtime.HallId)
-                .ToList();
-
-            if (seats.Count != seatIds.Count)
-            {
-                TempData["SeatError"] = "One or more selected seats are not valid for this showtime.";
-                return RedirectToAction("Select", "Showtimes", new { id = showtimeId });
-            }
-
-            var takenSeatIds = _context.BookingSeats
-                .Where(bs => bs.Booking.ShowtimeId == showtimeId && bs.Booking.Status == BookingStatus.Confirmed)
-                .Select(bs => bs.SeatId)
-                .ToList();
-
-            if (seatIds.Any(id => takenSeatIds.Contains(id)))
-            {
-                TempData["SeatError"] = "One or more selected seats were just booked. Please choose different seats.";
-                return RedirectToAction("Select", "Showtimes", new { id = showtimeId });
-            }
-
-            var totalPrice = seats.Sum(seat =>
-                seat.SeatType == SeatType.VIP ? showtime.VipPrice : showtime.NormalPrice);
-
-            var booking = new Booking
-            {
-                UserId = userId,
-                ShowtimeId = showtimeId,
-                BookingDate = DateTime.Now,
-                TotalPrice = totalPrice,
-                Status = BookingStatus.Confirmed,
-                BookingSeats = seats.Select(seat => new BookingSeat
+            var result = await _bookingService.CreateBookingAsync(
+                new CreateBookingDto
                 {
-                    SeatId = seat.Id
-                }).ToList()
-            };
+                    UserId = userId,
+                    ShowtimeId = showtimeId,
+                    SeatIds = seatIds ?? new List<int>()
+                });
 
-            _context.Bookings.Add(booking);
-            _context.SaveChanges();
+            switch (result.Result)
+            {
+                case CreateBookingResult.NoSeatsSelected:
+                    TempData["SeatError"] =
+                        "Please select at least one seat.";
 
-            return RedirectToAction("Confirmation", new { id = booking.Id });
+                    return RedirectToAction(
+                        "Select",
+                        "Showtimes",
+                        new { id = showtimeId });
+
+                case CreateBookingResult.ShowtimeNotFound:
+                    return NotFound();
+
+                case CreateBookingResult.InvalidSeats:
+                    TempData["SeatError"] =
+                        "One or more selected seats are not valid for this showtime.";
+
+                    return RedirectToAction(
+                        "Select",
+                        "Showtimes",
+                        new { id = showtimeId });
+
+                case CreateBookingResult.SeatsAlreadyTaken:
+                    TempData["SeatError"] =
+                        "One or more selected seats were just booked. Please choose different seats.";
+
+                    return RedirectToAction(
+                        "Select",
+                        "Showtimes",
+                        new { id = showtimeId });
+
+                case CreateBookingResult.Created:
+                    return RedirectToAction(
+                        nameof(Confirmation),
+                        new { id = result.BookingId });
+
+                default:
+                    return BadRequest();
+            }
         }
 
-        public IActionResult Confirmation(int id)
+        public async Task<IActionResult> Confirmation(int id)
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var userId = User.FindFirstValue(
+                ClaimTypes.NameIdentifier);
 
             if (userId == null)
             {
                 return Challenge();
             }
 
-            var booking = _context.Bookings
-                .Include(b => b.Showtime)
-                    .ThenInclude(s => s.Movie)
-                .Include(b => b.Showtime)
-                    .ThenInclude(s => s.Hall)
-                .Include(b => b.BookingSeats)
-                    .ThenInclude(bs => bs.Seat)
-                .FirstOrDefault(b => b.Id == id);
+            var booking =
+                await _bookingService.GetBookingConfirmationAsync(
+                    id,
+                    userId);
 
             if (booking == null)
             {
                 return NotFound();
             }
 
-            if (booking.UserId != userId)
-            {
-                return Forbid();
-            }
-
             return View(booking);
         }
 
-        public IActionResult MyBookings()
+        public async Task<IActionResult> MyBookings()
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var userId = User.FindFirstValue(
+                ClaimTypes.NameIdentifier);
 
             if (userId == null)
             {
                 return Challenge();
             }
 
-            var bookings = _context.Bookings
-                .Where(b => b.UserId == userId)
-                .Include(b => b.Showtime)
-                    .ThenInclude(s => s.Movie)
-                .Include(b => b.Showtime)
-                    .ThenInclude(s => s.Hall)
-                .Include(b => b.BookingSeats)
-                    .ThenInclude(bs => bs.Seat)
-                .OrderByDescending(b => b.BookingDate)
-                .ToList();
+            var bookings =
+                await _bookingService.GetUserBookingsAsync(userId);
 
             return View(bookings);
         }

@@ -1,5 +1,6 @@
 using CineBook.Data;
 using CineBook.Dtos.Movies;
+using CineBook.Dtos.Showtimes;
 using CineBook.Models;
 using CineBook.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -162,5 +163,92 @@ namespace CineBook.Services.Implementations
                 Result = DeleteMovieResult.Deleted
             };
         }
+
+
+        public async Task<MovieIndexDto> GetMovieIndexAsync()
+        {
+            var movies = await _context.Movies
+                .AsNoTracking()
+                .Where(m =>
+                    m.Status == MovieStatus.NowShowing ||
+                    m.Status == MovieStatus.ComingSoon)
+                .OrderBy(m => m.Title)
+                .Select(m => new
+                {
+                    m.Id,
+                    m.Title,
+                    m.PosterUrl,
+                    m.DurationMinutes,
+                    m.Genre,
+                    m.Status
+                })
+                .ToListAsync();
+
+            return new MovieIndexDto
+            {
+                NowShowingMovies = movies
+                    .Where(m => m.Status == MovieStatus.NowShowing)
+                     .Select(m => new MovieCardDto
+                    {
+                         Id = m.Id,
+                         Title = m.Title,
+                         PosterUrl = m.PosterUrl,
+                         DurationMinutes = m.DurationMinutes,
+                         Genre = m.Genre.ToString()
+                     })
+                     .ToList(),
+
+                ComingSoonMovies = movies
+                    .Where(m => m.Status == MovieStatus.ComingSoon)
+                    .Select(m => new MovieCardDto
+                    {
+                        Id = m.Id,
+                        Title = m.Title,
+                        PosterUrl = m.PosterUrl,
+                        DurationMinutes = m.DurationMinutes,
+                        Genre = m.Genre.ToString(),
+                    })
+                    .ToList()
+            };
+        }
+
+
+
+        public async Task<MovieDetailsDto?> GetMovieDetailsAsync(int movieId)
+        {
+            return await _context.Movies
+                .AsNoTracking()
+                .Where(m => m.Id == movieId)
+                .Select(m => new MovieDetailsDto
+                {
+                    Id = m.Id,
+                    Title = m.Title,
+                    Description = m.Description,
+                    PosterUrl = m.PosterUrl,
+                    Genre = m.Genre.ToString(),
+                    DurationMinutes = m.DurationMinutes,
+                    Status = m.Status,
+
+                    Showtimes = m.Showtimes
+                        .OrderBy(s => s.StartTime)
+                        .Select(s => new MovieShowtimeDto
+                        {
+                            Id = s.Id,
+                            StartTime = s.StartTime,
+                            NormalPrice = s.NormalPrice,
+                            VipPrice = s.VipPrice,
+                            HallId = s.HallId,
+                            HallName = s.Hall.Name
+                        })
+                        .ToList()
+                })
+                .FirstOrDefaultAsync();
+        }
+
+
+
+
+
     }
+    
 }
