@@ -18,6 +18,7 @@ namespace CineBook.Data
         public DbSet<Booking> Bookings { get; set; }
         public DbSet<BookingSeat> BookingSeats { get; set; }
         public DbSet<Employee> Employees { get; set; }
+        public DbSet<Snack> Snacks { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -56,6 +57,14 @@ namespace CineBook.Data
                 .WithOne()
                 .HasForeignKey<Employee>(e => e.ApplicationUserId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Snack>()
+                .Property(s => s.Price)
+                .HasPrecision(10, 2);
+
+            modelBuilder.Entity<Snack>()
+                .HasIndex(s => s.Name)
+                .IsUnique();
 
             modelBuilder.Entity<BookingSeat>()
                 .HasOne(bs => bs.Seat)
