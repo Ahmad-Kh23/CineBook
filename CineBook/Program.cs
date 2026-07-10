@@ -17,6 +17,8 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddDefaultTokenProviders();
 builder.Services.AddScoped<IBookingService, BookingService>();
+builder.Services.AddScoped<IAccountService, AccountService>();
+builder.Services.AddScoped<IEmployeeService, EmployeeService>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -45,7 +47,9 @@ using (var scope = app.Services.CreateScope())
     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
-    string[] roleNames = { "Admin", "Customer" };
+    context.Database.Migrate();
+
+    string[] roleNames = { "Admin", "Customer", "CanteenEmployee" };
 
     foreach (var roleName in roleNames)
     {
