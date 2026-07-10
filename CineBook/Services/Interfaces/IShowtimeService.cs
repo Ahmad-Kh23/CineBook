@@ -1,4 +1,5 @@
 using CineBook.Dtos.Showtimes;
+using CineBook.ViewModels;
 
 namespace CineBook.Services.Interfaces
 {
@@ -6,5 +7,8 @@ namespace CineBook.Services.Interfaces
     {
         Task<CreateShowtimeResultDto> CreateShowtimeAsync(CreateShowtimeDto dto);
         Task<CreateShowtimeFormDto?> GetCreateShowtimeFormAsync(CreateShowtimeFormRequestDto dto);
+
+        Task<SeatSelectionViewModel?> GetSeatSelectionAsync(
+            int showtimeId);
     }
 }

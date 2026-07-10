@@ -2,6 +2,7 @@ using CineBook.Data;
 using CineBook.Dtos.Showtimes;
 using CineBook.Models;
 using CineBook.Services.Interfaces;
+using CineBook.ViewModels;
 using Microsoft.EntityFrameworkCore;
 
 namespace CineBook.Services.Implementations
@@ -137,6 +138,50 @@ namespace CineBook.Services.Implementations
                 var existingEnd = s.StartTime.AddMinutes(s.Movie.DurationMinutes);
                 return s.StartTime < newEnd && existingEnd > newStart;
             });
+        }
+
+        public async Task<SeatSelectionViewModel?> GetSeatSelectionAsync(
+    int showtimeId)
+        {
+            var showtime = await _context.Showtimes
+                .AsNoTracking()
+                .Include(s => s.Movie)
+                .Include(s => s.Hall)
+                .FirstOrDefaultAsync(s => s.Id == showtimeId);
+
+            if (showtime == null)
+            {
+                return null;
+            }
+
+            var seats = await _context.Seats
+                .AsNoTracking()
+                .Where(s => s.HallId == showtime.HallId)
+                .OrderBy(s => s.RowLabel)
+                .ThenBy(s => s.SeatNumber)
+                .ToListAsync();
+
+            var takenSeatIds = await _context.BookingSeats
+                .AsNoTracking()
+                .Where(bs =>
+                    bs.Booking.ShowtimeId == showtimeId &&
+                    bs.Booking.Status == BookingStatus.Confirmed)
+                .Select(bs => bs.SeatId)
+                .ToListAsync();
+
+            return new SeatSelectionViewModel
+            {
+                Showtime = showtime,
+
+                SeatsByRow = seats
+                    .GroupBy(s => s.RowLabel)
+                    .OrderBy(group => group.Key)
+                    .ToDictionary(
+                        group => group.Key,
+                        group => group.ToList()),
+
+                TakenSeatIds = takenSeatIds
+            };
         }
     }
 }
