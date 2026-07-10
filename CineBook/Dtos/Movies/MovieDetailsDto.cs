@@ -19,6 +19,10 @@ namespace CineBook.Dtos.Movies
 
         public int DurationMinutes { get; set; }
 
+        public string? Language { get; set; }
+
+        public DateTime ReleaseDate { get; set; }
+
         public MovieStatus Status { get; set; }
 
         public List<MovieShowtimeDto> Showtimes { get; set; } = new();

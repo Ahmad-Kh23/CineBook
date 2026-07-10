@@ -1,5 +1,4 @@
-@model List<Booking>
-
+@model List<CineBook.Dtos.Bookings.BookingListItemDto>
 @{
     ViewData["Title"] = "My Bookings";
 }
@@ -26,21 +25,20 @@
             <tbody>
                 @foreach (var booking in Model)
                 {
-                    var seats = booking.BookingSeats
-                        .Select(bs => bs.Seat)
+                    var seats = booking.Seats
                         .OrderBy(s => s.RowLabel)
                         .ThenBy(s => s.SeatNumber)
                         .ToList();
 
                     <tr>
                         <td>
-                            <div class="fw-semibold">@booking.Showtime.Movie.Title</div>
+                            <div class="fw-semibold">@booking.MovieTitle</div>
                             <div class="text-muted small">Booked @booking.BookingDate.ToString("dd MMM yyyy")</div>
                         </td>
-                        <td>@booking.Showtime.Hall.Name</td>
+                        <td>@booking.HallName</td>
                         <td>
-                            @booking.Showtime.StartTime.ToString("dd MMM yyyy")
-                            <div class="text-muted small">@booking.Showtime.StartTime.ToString("hh:mm tt")</div>
+                            @booking.StartTime.ToString("dd MMM yyyy")
+                            <div class="text-muted small">@booking.StartTime.ToString("hh:mm tt")</div>
                         </td>
                         <td>
                             @foreach (var seat in seats)
