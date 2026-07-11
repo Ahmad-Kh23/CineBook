@@ -1,0 +1,89 @@
+@model CineBook.Dtos.SnackOrders.SnackOrderFormDto
+
+@{
+    ViewData["Title"] = "Order Snacks";
+}
+
+<div class="mb-4">
+    <a href="/Bookings/MyBookings" class="text-decoration-none">&larr; Back to My Bookings</a>
+    <h1 class="h3 mt-3">Order Snacks</h1>
+    <p class="text-muted mb-0">
+        @Model.MovieTitle | @Model.HallName | @Model.StartTime.ToString("dd MMM yyyy hh:mm tt")
+    </p>
+</div>
+
+<form method="post" action="/Bookings/@Model.BookingId/Snacks">
+    @Html.AntiForgeryToken()
+    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+    <section class="mb-4">
+        <h2 class="h5">Delivery Seats</h2>
+        <div class="d-flex flex-wrap gap-3">
+            @foreach (var seat in Model.Seats)
+            {
+                <div class="form-check">
+                    <input class="form-check-input"
+                           type="checkbox"
+                           name="SeatIds"
+                           value="@seat.Id"
+                           id="seat-@seat.Id"
+                           checked="@Model.Order.SeatIds.Contains(seat.Id)" />
+                    <label class="form-check-label" for="seat-@seat.Id">@seat.RowLabel@seat.SeatNumber</label>
+                </div>
+            }
+        </div>
+    </section>
+
+    <section class="mb-4">
+        <h2 class="h5">Snacks</h2>
+        @if (Model.Snacks.Any())
+        {
+            <div class="table-responsive">
+                <table class="table table-bordered align-middle">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Snack</th>
+                            <th>Category</th>
+                            <th>Description</th>
+                            <th>Price</th>
+                            <th style="width: 140px;">Quantity</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (var i = 0; i < Model.Snacks.Count; i++)
+                        {
+                            var snack = Model.Snacks[i];
+                            var existingItem = Model.Order.Items.FirstOrDefault(item => item.SnackId == snack.Id);
+
+                            <tr>
+                                <td class="fw-semibold">@snack.Name</td>
+                                <td>@snack.Category</td>
+                                <td>@snack.Description</td>
+                                <td>@snack.Price.ToString("0.00") EGP</td>
+                                <td>
+                                    <input type="hidden" name="Items[@i].SnackId" value="@snack.Id" />
+                                    <input type="number"
+                                           name="Items[@i].Quantity"
+                                           value="@(existingItem?.Quantity ?? 0)"
+                                           min="0"
+                                           max="20"
+                                           class="form-control" />
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="border rounded p-4 text-center">
+                <h3 class="h6">No snacks available</h3>
+                <p class="text-muted mb-0">The canteen has no available items right now.</p>
+            </div>
+        }
+    </section>
+
+    <button type="submit" class="btn btn-dark" disabled="@(!Model.Snacks.Any())">Send Order</button>
+    <a href="/Bookings/MyBookings" class="btn btn-outline-dark">Cancel</a>
+</form>

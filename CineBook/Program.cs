@@ -20,6 +20,7 @@ builder.Services.AddScoped<IBookingService, BookingService>();
 builder.Services.AddScoped<IAccountService, AccountService>();
 builder.Services.AddScoped<IEmployeeService, EmployeeService>();
 builder.Services.AddScoped<ISnackService, SnackService>();
+builder.Services.AddScoped<ISnackOrderService, SnackOrderService>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

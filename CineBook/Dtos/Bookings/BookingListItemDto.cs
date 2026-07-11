@@ -11,5 +11,6 @@ public class BookingListItemDto
     public DateTime StartTime { get; set; }
     public string MovieTitle { get; set; } = string.Empty;
     public string HallName { get; set; } = string.Empty;
+    public bool CanOrderSnacks { get; set; }
     public List<BookedSeatDto> Seats { get; set; } = new();
 }

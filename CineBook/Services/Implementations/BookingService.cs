@@ -168,6 +168,8 @@ namespace CineBook.Services.Implementations
                     StartTime = b.Showtime.StartTime,
                     MovieTitle = b.Showtime.Movie.Title,
                     HallName = b.Showtime.Hall.Name,
+                    CanOrderSnacks = b.Status == BookingStatus.Confirmed &&
+                        b.Showtime.StartTime.AddMinutes(b.Showtime.Movie.DurationMinutes) > DateTime.Now,
 
                     Seats = b.BookingSeats
                         .OrderBy(bs => bs.Seat.RowLabel)

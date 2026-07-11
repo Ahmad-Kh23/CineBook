@@ -19,6 +19,9 @@ namespace CineBook.Data
         public DbSet<BookingSeat> BookingSeats { get; set; }
         public DbSet<Employee> Employees { get; set; }
         public DbSet<Snack> Snacks { get; set; }
+        public DbSet<SnackOrder> SnackOrders { get; set; }
+        public DbSet<SnackOrderItem> SnackOrderItems { get; set; }
+        public DbSet<SnackOrderSeat> SnackOrderSeats { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -65,6 +68,38 @@ namespace CineBook.Data
             modelBuilder.Entity<Snack>()
                 .HasIndex(s => s.Name)
                 .IsUnique();
+
+            modelBuilder.Entity<SnackOrder>()
+                .Property(o => o.TotalPrice)
+                .HasPrecision(10, 2);
+
+            modelBuilder.Entity<SnackOrder>()
+                .HasOne(o => o.User)
+                .WithMany()
+                .HasForeignKey(o => o.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<SnackOrder>()
+                .HasOne(o => o.AssignedEmployee)
+                .WithMany()
+                .HasForeignKey(o => o.AssignedEmployeeId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<SnackOrderItem>()
+                .Property(i => i.UnitPrice)
+                .HasPrecision(10, 2);
+
+            modelBuilder.Entity<SnackOrderItem>()
+                .HasOne(i => i.Snack)
+                .WithMany()
+                .HasForeignKey(i => i.SnackId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<SnackOrderSeat>()
+                .HasOne(s => s.Seat)
+                .WithMany()
+                .HasForeignKey(s => s.SeatId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<BookingSeat>()
                 .HasOne(bs => bs.Seat)

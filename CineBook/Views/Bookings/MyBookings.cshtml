@@ -20,6 +20,7 @@
                     <th>Seats</th>
                     <th>Total</th>
                     <th>Status</th>
+                    <th></th>
                 </tr>
             </thead>
             <tbody>
@@ -55,6 +56,12 @@
                             else
                             {
                                 <span class="badge text-bg-secondary">@booking.Status</span>
+                            }
+                        </td>
+                        <td class="text-end">
+                            @if (booking.Status == BookingStatus.Confirmed && booking.CanOrderSnacks)
+                            {
+                                <a href="/Bookings/@booking.Id/Snacks" class="btn btn-sm btn-outline-dark">Order Snacks</a>
                             }
                         </td>
                     </tr>

@@ -44,6 +44,12 @@
                                     <a class="nav-link text-dark" href="/Admin/Snacks">Canteen</a>
                                 </li>
                             }
+                            @if (User.IsInRole("CanteenEmployee"))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark" href="/Canteen">Canteen Dashboard</a>
+                                </li>
+                            }
                             <li class="nav-item">
                                 <a class="nav-link text-dark" asp-controller="Bookings" asp-action="MyBookings">My Bookings</a>
                             </li>

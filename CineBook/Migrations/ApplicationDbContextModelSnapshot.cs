@@ -396,6 +396,105 @@ namespace CineBook.Migrations
                     b.ToTable("Snacks");
                 });
 
+            modelBuilder.Entity("CineBook.Models.SnackOrder", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("AssignedEmployeeId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("BookingId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeliveredAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("TotalPrice")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssignedEmployeeId");
+
+                    b.HasIndex("BookingId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("SnackOrders");
+                });
+
+            modelBuilder.Entity("CineBook.Models.SnackOrderItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ItemNameSnapshot")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SnackId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SnackOrderId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("UnitPrice")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("decimal(10,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SnackId");
+
+                    b.HasIndex("SnackOrderId");
+
+                    b.ToTable("SnackOrderItems");
+                });
+
+            modelBuilder.Entity("CineBook.Models.SnackOrderSeat", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("SeatId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SnackOrderId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SeatId");
+
+                    b.HasIndex("SnackOrderId");
+
+                    b.ToTable("SnackOrderSeats");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
                 {
                     b.Property<string>("Id")
@@ -608,6 +707,70 @@ namespace CineBook.Migrations
                     b.Navigation("Movie");
                 });
 
+            modelBuilder.Entity("CineBook.Models.SnackOrder", b =>
+                {
+                    b.HasOne("CineBook.Models.Employee", "AssignedEmployee")
+                        .WithMany()
+                        .HasForeignKey("AssignedEmployeeId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("CineBook.Models.Booking", "Booking")
+                        .WithMany()
+                        .HasForeignKey("BookingId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("CineBook.Models.ApplicationUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("AssignedEmployee");
+
+                    b.Navigation("Booking");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("CineBook.Models.SnackOrderItem", b =>
+                {
+                    b.HasOne("CineBook.Models.SnackOrder", "SnackOrder")
+                        .WithMany("Items")
+                        .HasForeignKey("SnackOrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("CineBook.Models.Snack", "Snack")
+                        .WithMany()
+                        .HasForeignKey("SnackId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Snack");
+
+                    b.Navigation("SnackOrder");
+                });
+
+            modelBuilder.Entity("CineBook.Models.SnackOrderSeat", b =>
+                {
+                    b.HasOne("CineBook.Models.Seat", "Seat")
+                        .WithMany()
+                        .HasForeignKey("SeatId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("CineBook.Models.SnackOrder", "SnackOrder")
+                        .WithMany("Seats")
+                        .HasForeignKey("SnackOrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Seat");
+
+                    b.Navigation("SnackOrder");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
@@ -684,6 +847,13 @@ namespace CineBook.Migrations
             modelBuilder.Entity("CineBook.Models.Showtime", b =>
                 {
                     b.Navigation("Bookings");
+                });
+
+            modelBuilder.Entity("CineBook.Models.SnackOrder", b =>
+                {
+                    b.Navigation("Items");
+
+                    b.Navigation("Seats");
                 });
 #pragma warning restore 612, 618
         }
